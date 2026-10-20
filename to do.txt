@@ -1,0 +1,4 @@
+> Add current date and time
+> Add the forecast maybe if possible. Like next hour mein kya weather hoga
+> Put some random advice or well wish like if it is slightly rainy then suggest the use of umbrella and if heavy rain then suggest to stay at home something like that
+> UI is very basic, try wo enhance( maybe some shapes in the background or some animation kind of thing around logo)

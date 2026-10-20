@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherWave</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="new basic.css">
+</head>
+
+<body>
+    
+  <video autoplay loop muted playsinline id="bg-video">
+  <source src="4k.mp4" type="video/mp4" />
+</video>
+<div class="overlay"></div>
+
+    
+    <h1 id ="Heading">Weather Wave</h1>
+
+
+    <div class="search-container">
+
+
+        <form id="search-form" autocomplete="off">
+        <input type="text" id="city-input" placeholder="Enter your city">
+        <button type="Submit">Search</button>
+        </form>
+    </div>
+  
+    <!--<div class="WeatherBox">
+    <h2 id="temp"> 🌤 </h2>
+    <p id="condition"> Condition: -- </p>
+    <p id="location"> Location: --</p>
+    <p id="details"> Humidity: --% | Wind: -- km/h </p>
+    <p id="timezone"> Timezone: --</p>
+    </div> -->
+    <div class="card-container"> 
+    <div class="weather-card" id="card-left"></div>
+    <div class="weather-card" id="card-center"></div>
+    <div class="weather-card" id="card-right"></div>
+    </div>
+
+    <div class="quote-box"> 
+      <p id="quote">Loading quote...</p>
+    </div>
+
+    <button id="back-button" class="back-button">⬅ Back</button>
+
+    
+
+
+
+
+   
+<script>
+  const form = document.getElementById("search-form");
+  const cityInput = document.getElementById("city-input");
+
+  
+
+  function fetchWeather(city, cardId) {
+    const apiKey = "fb8e05ab308243fab3d94648251107";
+    const url = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}`;
+
+    fetch(url)
+      .then(response => {
+        if (!response.ok) throw new Error("City not found");
+        return response.json();
+      })
+      .then(data => {
+        const temperature = data.current.temp_c;
+        const conditionText = data.current.condition.text;
+        const locationName = data.location.name;
+        const humidity = data.current.humidity;
+        const wind = data.current.wind_kph;
+        const icon = data.current.condition.icon;
+
+        const card = document.getElementById(cardId);
+
+        card.innerHTML = `
+          <h3>${locationName}</h3>
+          <img src="${icon}" alt="${conditionText}">
+          <p>${temperature}°C</p>
+          <p>${conditionText}</p>
+          <p>Humidity: ${humidity}%</p>
+          <p>Wind: ${wind} km/h</p>
+        `;
+        card.classList.remove("visible");
+        void card.offsetWidth;
+        card.classList.add("visible");
+      })
+      .catch(error => {
+        document.getElementById(cardId).innerHTML = `<p style="color:red;">${error.message}</p>`;
+      });
+  }
+
+  window.onload = function () {
+    document.body.classList.add('loaded');
+    fetchWeather("London", "card-left");
+    fetchWeather("New Delhi", "card-center");
+    fetchWeather("Tokyo", "card-right");
+  };
+
+  function fetchDetailedWeather(city, cardId) {
+    const apiKey = "fb8e05ab308243fab3d94648251107";
+    const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${city}&days=3`;
+
+    fetch(url)
+      .then(response => {
+        if (!response.ok) throw new Error("City not found");
+        return response.json();
+      })
+      .then(data => {
+        const current = data.current;
+        const forecast = data.forecast.forecastday;
+        const card = document.getElementById(cardId);
+
+        card.innerHTML = "";
+        card.classList.remove("visible");
+
+        let forecastHTML = `<div class="forecast">`;
+        forecast.forEach(day => {
+          forecastHTML += `
+            <div class="forecast-day">
+              <p><strong>${day.date}</strong></p>
+              <img src="${day.day.condition.icon}" alt="${day.day.condition.text}">
+              <p>${day.day.avgtemp_c}°C</p>
+              <p>${day.day.condition.text}</p>
+            </div>`;
+        });
+        forecastHTML += '</div>';
+
+        card.innerHTML = `
+          <h3>${data.location.name}</h3>
+          <img src="${current.condition.icon}" alt="${current.condition.text}">
+          <p>${current.temp_c}°C</p>
+          <p>${current.condition.text}</p>
+          <p>Humidity: ${current.humidity}%</p>
+          <p>Wind: ${current.wind_kph} km/h</p>
+          <p>Timezone: ${data.location.tz_id}</p>
+          ${forecastHTML}
+        `;
+        card.classList.remove("visible");
+        void card.offsetWidth;
+        card.classList.add("visible");
+  
+      })
+      .catch(error => {
+        const card = document.getElementById(cardId);
+        document.getElementById(cardId).innerHTML = `<p style="color:red;">${error.message}</p>`;
+        card.classList.add("visible")
+      });
+  }
+
+  const backButton = document.getElementById("back-button");
+
+form.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  const city = cityInput.value.trim();
+  if (!city) return;
+
+  document.querySelector(".card-container").classList.add("hide-sides");
+  document.getElementById("card-center").classList.add("visible");
+  backButton.style.display = "block";
+
+  fetchDetailedWeather(city, "card-center");
+});
+
+backButton.addEventListener("click", () => {
+  document.querySelector(".card-container").classList.remove("hide-sides");
+  backButton.style.display = "none";
+
+  ["card-left", "card-center", "card-right"].forEach(id => {
+    const card = document.getElementById(id);
+    card.classList.remove("visible");
+  });
+
+  // Force reflow
+  void document.getElementById("card-left").offsetWidth;
+
+  fetchWeather("London", "card-left");
+  fetchWeather("New Delhi", "card-center");
+  fetchWeather("Tokyo", "card-right");
+});
+
+function loadQuote() {
+  const quoteEl = document.getElementById("quote");
+  quoteEl.style.opacity = 0; // fade out
+
+ fetch("https://api.allorigins.win/get?url=" + encodeURIComponent("https://zenquotes.io/api/random"))
+  .then(res => res.json())
+  .then(data => {
+    const parsed = JSON.parse(data.contents); 
+    const quote = parsed[0].q;
+    const author = parsed[0].a;
+    quoteEl.textContent = `“${quote}” — ${author}`;
+    quoteEl.style.opacity = 1;
+  })
+  .catch(err => {
+    console.error("Error fetching quote:", err);
+    quoteEl.textContent = "Could not load quote at the moment.";
+    quoteEl.style.opacity = 1;
+  });
+}
+
+// Load at startup
+loadQuote();
+
+// Refresh every minute if desired
+setInterval(loadQuote, 60000);
+
+
+
+</script>
+
+</body>
+
+
+</html>
